@@ -1,0 +1,8 @@
+[
+  {
+    "id": "GraphVizv2",
+    "title": "GraphVizv2",
+    "panel": "panels/GraphViz/GraphVizPanel",
+    "DEBUG_ONLY": false
+  }
+]

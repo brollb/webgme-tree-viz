@@ -1,0 +1,16 @@
+{
+  "components": {
+    "visualizers": {
+      "GraphViz": {
+        "src": "panels/GraphViz/GraphVizPanel",
+        "title": "GraphViz",
+        "panel": "src/visualizers/panels/GraphViz",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/GraphViz"
+      }
+    }
+  },
+  "dependencies": {
+    "visualizers": {}
+  }
+}
