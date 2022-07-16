@@ -18,6 +18,8 @@ define(['js/logger',
 
     'use strict';
 
+    const SET_NAME = 'visualizers';
+
     var GraphVizControl;
 
     GraphVizControl = function (options) {
@@ -101,9 +103,8 @@ define(['js/logger',
         };
     };
 
-    GraphVizControl.prototype.selectedObjectChanged = function (nodeId) {
-        var desc = this._getObjectDescriptor(nodeId),
-            self = this;
+    GraphVizControl.prototype.selectedObjectChanged = async function (nodeId) {
+        var self = this;
 
         this._logger.debug('activeObject nodeId \'' + nodeId + '\'');
 
@@ -117,112 +118,107 @@ define(['js/logger',
 
         this._nodes = {};
 
-        if (typeof this._currentNodeId === 'string' && desc) {
+        if (typeof this._currentNodeId === 'string') {
             //put new node's info into territory rules
             this._selfPatterns = {};
             this._selfPatterns[nodeId] = {children: Infinity};
 
-            this._graphVizWidget.setTitle((desc.name || '').toUpperCase());
+            const node = this._client.getNode(nodeId);
+            const title = node.getAttribute('name') || '';
+            this._graphVizWidget.setTitle(title.toUpperCase());
 
-            // if (desc.parentId || desc.parentId === CONSTANTS.PROJECT_ROOT_ID) {
-            //     this.$btnModelHierarchyUp.show();
-            // } else {
-            //     this.$btnModelHierarchyUp.hide();
-            // }
+            this._currentNodeParentId = node.getParentId();
 
-            this._currentNodeParentId = desc.parentId;
-
-            // TODO: load the visualizer transformation
-            // TODO: 
             this._territoryId = this._client.addUI(
                 this,
-                // TODO: transform the nodes to the graph viz metamodel
-                // TODO: diff with the current state
-                // TODO: call the load, update, unload callbacks
-                // TODO: this one may not even need the adapter...
                 () => {
                     if (nodeId === this._currentNodeId) {
                         this._onTerritoryLoaded(nodeId);
                     }
                 }
             );
-            //update the territory
+
             this._client.updateTerritory(this._territoryId, this._selfPatterns);
+
+            // update the territory
+            const transNodeID = this._getTransformationNodeID(nodeId);
+            if (transNodeID) {
+                this._transformationTerritory = this._client.addUI(
+                    this,
+                    async () => {
+                        if (nodeId === this._currentNodeId) {
+                            const {core, rootNode} = await this.getCoreInstance();
+                            const node = await core.loadByPath(rootNode, nodeId);
+                            const transformation = await Transformation.fromNode(core, node);
+                            this._setTransformation(core, node, transformation);
+                        }
+                    }
+                );
+
+                const pattern = {};
+                pattern[transNodeID] = {children: Infinity}
+                this._client.updateTerritory(this._transformationTerritory, pattern);
+            } else {
+                const {core, rootNode} = await this.getCoreInstance();
+                const node = await core.loadByPath(rootNode, nodeId);
+                this._setTransformation(core, node, new DefaultTransformation(core));
+            }
         }
     };
 
-    GraphVizControl.prototype._getObjectDescriptor = function (nodeId) {
-        var nodeObj = this._client.getNode(nodeId),
-            objDescriptor;
-
-        if (nodeObj) {
-            objDescriptor = {
-                'id': undefined,
-                'name': undefined,
-                'childrenIDs': undefined,
-                'parentId': undefined,
-                'isConnection': false
-            };
-
-            objDescriptor.id = nodeObj.getId();
-            objDescriptor.name = nodeObj.getAttribute(nodePropertyNames.Attributes.name);
-            objDescriptor.childrenIDs = nodeObj.getChildrenIds();
-            objDescriptor.childrenNum = objDescriptor.childrenIDs.length;
-            objDescriptor.parentId = nodeObj.getParentId();
-            objDescriptor.isConnection = GMEConcepts.isConnection(nodeId);
+    GraphVizControl.prototype._setTransformation = function (core, node, transformation) {
+        const nodeId = core.getPath(node);
+        if (this._currentNodeId === nodeId) {
+            this.transformation = transformation;
+            console.log('setting transformation');
+            this._onUpdateWidget(transformation, node);
         }
+    };
 
-        return objDescriptor;
+    GraphVizControl.prototype._getTransformationNodeID = function (nodeId) {
+        const node = this._client.getNode(nodeId);
+        const sets = node.getSetNames();
+        if (sets.includes(SET_NAME)) {
+            const members = node.getMemberIds(SET_NAME);
+            return members.find(
+                memberId => node.getMemberAttribute(SET_NAME, memberId, 'visualizer') === 'GraphViz'
+            );
+        }
+        // TODO: This will be a little
+    };
+
+    GraphVizControl.prototype._getObjectDescriptor = function (nodeJson) {
+        return {
+            id: nodeJson.path,
+            name: nodeJson.attributes.name,
+            children: nodeJson.children.map(child => this._getObjectDescriptor(child)),
+            childrenNum: nodeJson.children.length,
+            //status: 'open' || 'closed' || 'LEAF' || 'opening' || 'CLOSING',
+        };
+    };
+
+    GraphVizControl.prototype.getCoreInstance = async function () {
+        return await new Promise(
+            (resolve, reject) => this._client.getCoreInstance(null, (err, result) => err ? reject(err) : resolve(result))
+        );
     };
 
     GraphVizControl.prototype._onTerritoryLoaded = function (nodeId) {
-        // TODO: pass transformation to the fn
         console.log('territory loaded!', nodeId);
+        if (this.transformation) {
+        }
         // TODO: apply the transformation to the domain model
         // TODO: convert the WJI format to the expected format
     };
 
-    GraphVizControl.prototype._generateData = function () {
-        var self = this,
-            data;
-
-        data = _.extend({},
-            (this._currentNodeId || this._currentNodeId === CONSTANTS.PROJECT_ROOT_ID) ?
-                this._nodes[this._currentNodeId] : {});
-
-        function loadRecursive(node) {
-            var len = (node && node.childrenIDs) ? node.childrenIDs.length : 0;
-            while (len--) {
-                node.children = node.children || [];
-                if (self._nodes[node.childrenIDs[len]]) {
-                    if ((self._displayModelsOnly === true &&
-                        self._nodes[node.childrenIDs[len]].isConnection !== true) ||
-                        self._displayModelsOnly === false) {
-                        node.children.push(_.extend({}, self._nodes[node.childrenIDs[len]]));
-                        loadRecursive(node.children[node.children.length - 1]);
-                    }
-                }
-            }
-        }
-
-        loadRecursive(data);
-
-        this._graphVizWidget.setData(data);
+    GraphVizControl.prototype._onUpdateWidget = async function (transformation, model) {
+        const viewModelNodes = await transformation.apply(model);
+        const data = viewModelNodes.map(node => this._getObjectDescriptor(node));
+        console.log('set data to', data);
+        this._graphVizWidget.setData(data[0]);
     };
 
     // PUBLIC METHODS
-    GraphVizControl.prototype._onLoad = function (gmeID) {
-        this._nodes[gmeID] = this._getObjectDescriptor(gmeID);
-    };
-
-    GraphVizControl.prototype._onUpdate = function (gmeID) {
-        this._nodes[gmeID] = this._getObjectDescriptor(gmeID);
-    };
-
-    GraphVizControl.prototype._onUnload = function (gmeID) {
-        delete this._nodes[gmeID];
-    };
-
     GraphVizControl.prototype.destroy = function () {
         if (this._territoryId) {
             this._client.removeUI(this._territoryId);
@@ -375,6 +371,21 @@ define(['js/logger',
         return menuItems;
     };
 
+    class DefaultTransformation {
+        constructor(core) {
+            this.core = core;
+        }
+
+        async apply(node) {
+            const children = await this.core.loadChildren(node);
+            return [{
+                attributes: {
+                    name: this.core.getAttribute(node, 'name'),
+                },
+                children: (await Promise.all(children.map(child => this.apply(child)))).flat(),
+            }];
+        }
+    }
 
     return GraphVizControl;
 });
