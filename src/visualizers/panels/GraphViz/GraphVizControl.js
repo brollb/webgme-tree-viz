@@ -37,8 +37,6 @@ define(['js/logger',
         this._initWidgetEventHandlers();
 
         this._logger.debug('Created');
-
-        this._timeoutId = null;
     };
 
     GraphVizControl.prototype._initWidgetEventHandlers = function () {
@@ -119,12 +117,10 @@ define(['js/logger',
 
         this._nodes = {};
 
-        clearTimeout(this._timeoutId);
-
         if (typeof this._currentNodeId === 'string' && desc) {
             //put new node's info into territory rules
             this._selfPatterns = {};
-            this._selfPatterns[nodeId] = {children: 0};
+            this._selfPatterns[nodeId] = {children: Infinity};
 
             this._graphVizWidget.setTitle((desc.name || '').toUpperCase());
 
@@ -136,16 +132,22 @@ define(['js/logger',
 
             this._currentNodeParentId = desc.parentId;
 
-            this._territoryId = this._client.addUI(this, function (events) {
-                self._eventCallback(events);
-            });
+            // TODO: load the visualizer transformation
+            // TODO: 
+            this._territoryId = this._client.addUI(
+                this,
+                // TODO: transform the nodes to the graph viz metamodel
+                // TODO: diff with the current state
+                // TODO: call the load, update, unload callbacks
+                // TODO: this one may not even need the adapter...
+                () => {
+                    if (nodeId === this._currentNodeId) {
+                        this._onTerritoryLoaded(nodeId);
+                    }
+                }
+            );
             //update the territory
             this._client.updateTerritory(this._territoryId, this._selfPatterns);
-
-            this._timeoutId = setTimeout(function () {
-                self._selfPatterns[nodeId] = {children: 1};
-                self._client.updateTerritory(self._territoryId, self._selfPatterns);
-            }, 1000);
         }
     };
 
@@ -173,32 +175,11 @@ define(['js/logger',
         return objDescriptor;
     };
 
-    GraphVizControl.prototype._eventCallback = function (events) {
-        var i = events ? events.length : 0,
-            e;
-
-        this._logger.debug('_eventCallback \'' + i + '\' items');
-
-        while (i--) {
-            e = events[i];
-            switch (e.etype) {
-                case CONSTANTS.TERRITORY_EVENT_LOAD:
-                    this._onLoad(e.eid);
-                    break;
-                case CONSTANTS.TERRITORY_EVENT_UPDATE:
-                    this._onUpdate(e.eid);
-                    break;
-                case CONSTANTS.TERRITORY_EVENT_UNLOAD:
-                    this._onUnload(e.eid);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        this._generateData();
-
-        this._logger.debug('_eventCallback \'' + events.length + '\' items - DONE');
+    GraphVizControl.prototype._onTerritoryLoaded = function (nodeId) {
+        // TODO: pass transformation to the fn
+        console.log('territory loaded!', nodeId);
+        // TODO: apply the transformation to the domain model
+        // TODO: convert the WJI format to the expected format
     };
 
     GraphVizControl.prototype._generateData = function () {
@@ -243,7 +224,6 @@ define(['js/logger',
     };
 
     GraphVizControl.prototype.destroy = function () {
-        clearTimeout(this._timeoutId);
         if (this._territoryId) {
             this._client.removeUI(this._territoryId);
         }

@@ -8,9 +8,13 @@
         "secondary": false,
         "widget": "src/visualizers/widgets/GraphViz"
       }
-    }
+    },
+    "seeds": {},
+    "plugins": {}
   },
   "dependencies": {
-    "visualizers": {}
+    "visualizers": {},
+    "seeds": {},
+    "plugins": {}
   }
 }
