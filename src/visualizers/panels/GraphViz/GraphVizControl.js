@@ -50,11 +50,6 @@ define(['js/logger',
             }
         };
 
-        this._graphVizWidget.onNodeOpen = function (id) {
-            self._selfPatterns[id] = {children: 1};
-            self._client.updateTerritory(self._territoryId, self._selfPatterns);
-        };
-
         this._graphVizWidget.onNodeDblClick = function (id) {
             WebGMEGlobal.State.registerActiveObject(id);
         };
@@ -69,6 +64,11 @@ define(['js/logger',
 
         this._graphVizWidget.setName = (nodeId, name) => {
             this._client.setAttribute(nodeId, 'name', name);
+        };
+
+        this._graphVizWidget.onNodeOpen = function (id) {
+            //self._selfPatterns[id] = {children: 1};
+            //self._client.updateTerritory(self._territoryId, self._selfPatterns);
         };
 
         this._graphVizWidget.onNodeClose = function (id) {
