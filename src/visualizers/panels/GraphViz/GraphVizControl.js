@@ -6,12 +6,12 @@
  */
 
 define(['js/logger',
-    'js/util',
+    'webgme-graph-viz/utils',
     'js/Constants',
     'js/Utils/GMEConcepts',
     'js/NodePropertyNames'
 ], function (Logger,
-             util,
+             utils,
              CONSTANTS,
              GMEConcepts,
              nodePropertyNames) {
@@ -129,50 +129,65 @@ define(['js/logger',
 
             this._currentNodeParentId = node.getParentId();
 
+            const isNodeStillActive = nodeId => nodeId === this._currentNodeId;
             this._territoryId = this._client.addUI(
                 this,
-                () => {
-                    if (nodeId === this._currentNodeId) {
-                        this._onTerritoryLoaded(nodeId);
-                    }
-                }
+                () => utils.chainWhile(
+                    () => isNodeStillActive(nodeId),
+                    [
+                        () => this.getCoreInstance(),
+                        ({core, rootNode}) => core.loadByPath(rootNode, nodeId),
+                        node => this._onTerritoryLoaded(node)
+                    ]
+                )
             );
 
             this._client.updateTerritory(this._territoryId, this._selfPatterns);
 
             // update the territory
             const transNodeID = this._getTransformationNodeID(nodeId);
+            console.log('found transformation?', !!transNodeID);
             if (transNodeID) {
                 this._transformationTerritory = this._client.addUI(
                     this,
-                    async () => {
-                        if (nodeId === this._currentNodeId) {
-                            const {core, rootNode} = await this.getCoreInstance();
-                            const node = await core.loadByPath(rootNode, nodeId);
-                            const transformation = await Transformation.fromNode(core, node);
-                            this._setTransformation(core, node, transformation);
-                        }
-                    }
+                    () => utils.chainWhile(
+                        () => isNodeStillActive(nodeId),
+                        [
+                            () => this.getCoreInstance(),
+                            async ({core, rootNode}) => {
+                                const node = await core.loadByPath(rootNode, nodeId);
+                                const transformation = await Transformation.fromNode(core, node);
+                                return {node, transformation};
+                            },
+                            ({node, transformation}) => this._setTransformation(node, transformation),
+                        ]
+                    )
                 );
 
                 const pattern = {};
                 pattern[transNodeID] = {children: Infinity}
                 this._client.updateTerritory(this._transformationTerritory, pattern);
             } else {
-                const {core, rootNode} = await this.getCoreInstance();
-                const node = await core.loadByPath(rootNode, nodeId);
-                this._setTransformation(core, node, new DefaultTransformation(core));
+                utils.chainWhile(
+                    () => isNodeStillActive(nodeId),
+                    [
+                            () => this.getCoreInstance(),
+                            async ({core, rootNode}) => {
+                                const node = await core.loadByPath(rootNode, nodeId);
+                                const transformation = new DefaultTransformation(core);
+                                return {node, transformation};
+                            },
+                            ({node, transformation}) => this._setTransformation(node, transformation),
+
+                    ]
+                );
             }
         }
     };
 
-    GraphVizControl.prototype._setTransformation = function (core, node, transformation) {
-        const nodeId = core.getPath(node);
-        if (this._currentNodeId === nodeId) {
-            this.transformation = transformation;
-            console.log('setting transformation');
-            this._onUpdateWidget(transformation, node);
-        }
+    GraphVizControl.prototype._setTransformation = function (node, transformation) {
+        this.transformation = transformation;
+        this._onUpdateWidget(transformation, node);
     };
 
     GraphVizControl.prototype._getTransformationNodeID = function (nodeId) {
@@ -181,10 +196,11 @@ define(['js/logger',
         if (sets.includes(SET_NAME)) {
             const members = node.getMemberIds(SET_NAME);
             return members.find(
-                memberId => node.getMemberAttribute(SET_NAME, memberId, 'visualizer') === 'GraphViz'
+                memberId => node.getMemberAttribute(SET_NAME, memberId, 'engine') === 'GraphViz'
             );
         }
-        // TODO: This will be a little
+        // TODO: This will need to be updated when we support this properly.
+        // That is, this should get the name, etc, from here
     };
 
     GraphVizControl.prototype._getObjectDescriptor = function (nodeJson) {
@@ -203,12 +219,11 @@ define(['js/logger',
         );
     };
 
-    GraphVizControl.prototype._onTerritoryLoaded = function (nodeId) {
-        console.log('territory loaded!', nodeId);
+    GraphVizControl.prototype._onTerritoryLoaded = async function (node) {
+        console.log('territory loaded!', node);
         if (this.transformation) {
+            await this._onUpdateWidget(this.transformation, node);
         }
-        // TODO: apply the transformation to the domain model
-        // TODO: convert the WJI format to the expected format
     };
 
     GraphVizControl.prototype._onUpdateWidget = async function (transformation, model) {
