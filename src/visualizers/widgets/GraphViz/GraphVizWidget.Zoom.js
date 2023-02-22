@@ -5,76 +5,73 @@
  * @author rkereskenyi / https://github.com/rkereskenyi
  */
 
-define(['js/Widgets/ZoomWidget/ZoomWidget'], function (ZoomWidget) {
+define(["js/Widgets/ZoomWidget/ZoomWidget"], function (ZoomWidget) {
+  "use strict";
 
-    'use strict';
+  var GraphVizWidgetZoom;
 
-    var GraphVizWidgetZoom;
+  GraphVizWidgetZoom = function () {
+  };
 
-    GraphVizWidgetZoom = function () {
+  GraphVizWidgetZoom.prototype._initZoom = function (opts) {
+    opts = opts || {};
+    var zoomWidget = new ZoomWidget({
+      zoomValues: opts.zoomValues,
+      class: "graph-viz-zoom-container",
+      sliderClass: "graph-viz-zoom-slider",
+      zoomTarget: this._el.find("svg"),
+    });
 
-    };
+    this._zoomSlider = zoomWidget.$zoomSlider;
+    this._el.parent().append(zoomWidget.$zoomContainer);
 
-    GraphVizWidgetZoom.prototype._initZoom = function (opts) {
-        opts = opts || {};
-        var zoomWidget = new ZoomWidget({
-            zoomValues: opts.zoomValues,
-            class: 'graph-viz-zoom-container',
-            sliderClass: 'graph-viz-zoom-slider',
-            zoomTarget: this._el.find('svg')
-        });
+    //add zoom level UI and handlers
+    this._addZoomMouseHandler(this._el);
+  };
 
-        this._zoomSlider = zoomWidget.$zoomSlider;
-        this._el.parent().append(zoomWidget.$zoomContainer);
+  GraphVizWidgetZoom.prototype._addZoomMouseHandler = function (el) {
+    var self = this;
 
-        //add zoom level UI and handlers
-        this._addZoomMouseHandler(this._el);
-    };
+    //MOUSE ENTER WORKAROUND
+    el.attr("tabindex", 0);
+    el.mouseenter(function () {
+      $(this).focus();
+    });
 
-    GraphVizWidgetZoom.prototype._addZoomMouseHandler = function (el) {
-        var self = this;
+    //IE, Chrome, etc
+    el.on("mousewheel", function (event) {
+      var org = event.originalEvent;
 
-        //MOUSE ENTER WORKAROUND
-        el.attr('tabindex', 0);
-        el.mouseenter(function () {
-            $(this).focus();
-        });
+      if (org && (org.ctrlKey || org.metaKey || org.altKey)) {
+        //CTRL + mouse scroll
+        if (org.wheelDelta < 0) {
+          self._zoomSlider.csszoom("zoomOut");
+        } else {
+          self._zoomSlider.csszoom("zoomIn");
+        }
 
-        //IE, Chrome, etc
-        el.on('mousewheel', function (event) {
-            var org = event.originalEvent;
+        event.stopPropagation();
+        event.preventDefault();
+      }
+    });
 
-            if (org && (org.ctrlKey || org.metaKey || org.altKey)) {
-                //CTRL + mouse scroll
-                if (org.wheelDelta < 0) {
-                    self._zoomSlider.csszoom('zoomOut');
-                } else {
-                    self._zoomSlider.csszoom('zoomIn');
-                }
+    //FIREFOX
+    el.on("DOMMouseScroll", function (event) {
+      var org = event.originalEvent;
 
-                event.stopPropagation();
-                event.preventDefault();
-            }
-        });
+      if (org && (org.ctrlKey || org.metaKey || org.altKey)) {
+        //CTRL + mouse scroll
+        if (org.detail > 0) {
+          self._zoomSlider.csszoom("zoomOut");
+        } else {
+          self._zoomSlider.csszoom("zoomIn");
+        }
 
-        //FIREFOX
-        el.on('DOMMouseScroll', function (event) {
-            var org = event.originalEvent;
+        event.stopPropagation();
+        event.preventDefault();
+      }
+    });
+  };
 
-            if (org && (org.ctrlKey || org.metaKey || org.altKey)) {
-                //CTRL + mouse scroll
-                if (org.detail > 0) {
-                    self._zoomSlider.csszoom('zoomOut');
-                } else {
-                    self._zoomSlider.csszoom('zoomIn');
-                }
-
-                event.stopPropagation();
-                event.preventDefault();
-            }
-        });
-    };
-
-
-    return GraphVizWidgetZoom;
+  return GraphVizWidgetZoom;
 });

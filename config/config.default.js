@@ -1,13 +1,14 @@
-'use strict';
+"use strict";
 
-var config = require('./config.webgme'),
-    validateConfig = require('webgme/config/validator');
+var config = require("./config.webgme"),
+  validateConfig = require("webgme/config/validator");
 
 // Add/overwrite any additional settings here
 // config.server.port = 8080;
 // config.mongo.uri = 'mongodb://127.0.0.1:27017/webgme_my_app';
 
-config.requirejsPaths['webgme-transformations'] = './node_modules/webgme-transformations';
+config.requirejsPaths["webgme-transformations"] =
+  "./node_modules/webgme-transformations";
 
 validateConfig(config);
 module.exports = config;
