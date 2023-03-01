@@ -12,6 +12,9 @@
     "seeds": {
       "GraphViz": {
         "src": "src/seeds/GraphViz"
+      },
+      "TestGraphViz": {
+        "src": "src/seeds/TestGraphViz"
       }
     },
     "plugins": {}
