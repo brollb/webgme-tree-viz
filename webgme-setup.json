@@ -9,7 +9,11 @@
         "widget": "src/visualizers/widgets/GraphViz"
       }
     },
-    "seeds": {},
+    "seeds": {
+      "GraphViz": {
+        "src": "src/seeds/GraphViz"
+      }
+    },
     "plugins": {}
   },
   "dependencies": {
