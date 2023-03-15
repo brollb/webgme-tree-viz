@@ -22,6 +22,11 @@
   "dependencies": {
     "visualizers": {},
     "seeds": {},
-    "plugins": {}
+    "plugins": {
+      "ApplyModelTransformation": {
+        "project": "webgme-transformations",
+        "path": "node_modules/webgme-transformations/src/plugins/ApplyModelTransformation"
+      }
+    }
   }
 }

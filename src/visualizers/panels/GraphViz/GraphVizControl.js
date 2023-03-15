@@ -8,12 +8,15 @@
 define([
   "js/logger",
   "webgme-graph-viz/utils",
+  "webgme-transformations/src/common/index",  // FIXME: remove src/common
   "js/Constants",
   "js/Utils/GMEConcepts",
   "js/NodePropertyNames",
-], function (Logger, utils, CONSTANTS, GMEConcepts, nodePropertyNames) {
+], function (Logger, utils, GMETransformations, CONSTANTS, GMEConcepts, nodePropertyNames) {
   "use strict";
 
+  console.log({GMETransformations});
+  const {TransformationObserver} = GMETransformations;
   const SET_NAME = "visualizers";
 
   var GraphVizControl;
@@ -28,7 +31,17 @@ define([
 
     //initialize core collections and variables
     this._graphVizWidget = options.widget;
-
+    this._transformObs = new TransformationObserver(
+      this._client,
+      core => new DefaultTransformation(core),
+      viewModel => {
+        //const isNodeStillActive = (nodeId) => nodeId === this._currentNodeId;
+        console.log({viewModel});
+        const data = viewModel.map((node) => this._getObjectDescriptor(node));
+        console.log("set data to", data);
+        this._graphVizWidget.setData(data[0]);
+      }
+    );
     this._currentNodeId = null;
     this._currentNodeParentId = undefined;
 
@@ -104,97 +117,22 @@ define([
   GraphVizControl.prototype.selectedObjectChanged = async function (nodeId) {
     var self = this;
 
-    this._logger.debug("activeObject nodeId '" + nodeId + "'");
-
-    //remove current territory patterns
-    if (this._currentNodeId) {
-      this._client.removeUI(this._territoryId);
-    }
-
+    // TODO: get the path of the transformation node
     this._currentNodeId = nodeId;
     this._currentNodeParentId = undefined;
 
     this._nodes = {};
 
     if (typeof this._currentNodeId === "string") {
-      //put new node's info into territory rules
-      this._selfPatterns = {};
-      this._selfPatterns[nodeId] = { children: Infinity };
+      const transNodeId = this._getTransformationNodeID(nodeId);
+      console.log('observe', nodeId, transNodeId);
+      this._transformObs.observe(nodeId, transNodeId);
 
       const node = this._client.getNode(nodeId);
       const title = node.getAttribute("name") || "";
       this._graphVizWidget.setTitle(title.toUpperCase());
-
       this._currentNodeParentId = node.getParentId();
-
-      const isNodeStillActive = (nodeId) => nodeId === this._currentNodeId;
-      this._territoryId = this._client.addUI(
-        this,
-        () =>
-          utils.chainWhile(
-            () => isNodeStillActive(nodeId),
-            [
-              () => this.getCoreInstance(),
-              ({ core, rootNode }) => core.loadByPath(rootNode, nodeId),
-              (node) => this._onTerritoryLoaded(node),
-            ],
-          ),
-      );
-
-      this._client.updateTerritory(this._territoryId, this._selfPatterns);
-
-      // update the territory
-      const transNodeID = this._getTransformationNodeID(nodeId);
-      console.log("found transformation?", !!transNodeID);
-      if (transNodeID) {
-        this._transformationTerritory = this._client.addUI(
-          this,
-          () =>
-            utils.chainWhile(
-              () => isNodeStillActive(nodeId),
-              [
-                () => this.getCoreInstance(),
-                async ({ core, rootNode }) => {
-                  const node = await core.loadByPath(rootNode, nodeId);
-                  const transformation = await Transformation.fromNode(
-                    core,
-                    node,
-                  );
-                  return { node, transformation };
-                },
-                ({ node, transformation }) =>
-                  this._setTransformation(node, transformation),
-              ],
-            ),
-        );
-
-        const pattern = {};
-        pattern[transNodeID] = { children: Infinity };
-        this._client.updateTerritory(this._transformationTerritory, pattern);
-      } else {
-        utils.chainWhile(
-          () => isNodeStillActive(nodeId),
-          [
-            () => this.getCoreInstance(),
-            async ({ core, rootNode }) => {
-              const node = await core.loadByPath(rootNode, nodeId);
-              const transformation = new DefaultTransformation(core);
-              return { node, transformation };
-            },
-            ({ node, transformation }) =>
-              this._setTransformation(node, transformation),
-          ],
-        );
-      }
     }
-  };
-
-  GraphVizControl.prototype._setTransformation = function (
-    node,
-    transformation,
-  ) {
-    this.transformation = transformation;
-    this._onUpdateWidget(transformation, node);
   };
 
   GraphVizControl.prototype._getTransformationNodeID = function (nodeId) {
@@ -252,9 +190,7 @@ define([
 
   // PUBLIC METHODS
   GraphVizControl.prototype.destroy = function () {
-    if (this._territoryId) {
-      this._client.removeUI(this._territoryId);
-    }
+    this._transformObs.disconnect();
 
     this._detachClientEventListeners();
     this._removeToolbarItems();
