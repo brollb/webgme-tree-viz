@@ -214,8 +214,13 @@ define([
 
     nodeUpdate.select("circle")
       .style("fill", function (d) {
+        if (d.color) {
+          return d.color;
+        }
+
         var status = d.status,
           color = "#FFFFFF";
+
         if (status === CLOSED) {
           color = "lightsteelblue";
         } else if (status === OPENING) {

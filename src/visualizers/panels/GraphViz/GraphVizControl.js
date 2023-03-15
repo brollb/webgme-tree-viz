@@ -36,7 +36,6 @@ define([
       core => new DefaultTransformation(core),
       viewModel => {
         //const isNodeStillActive = (nodeId) => nodeId === this._currentNodeId;
-        console.log({viewModel});
         const data = viewModel.map((node) => this._getObjectDescriptor(node));
         console.log("set data to", data);
         this._graphVizWidget.setData(data[0]);
@@ -83,34 +82,7 @@ define([
     };
 
     this._graphVizWidget.onNodeClose = function (id) {
-      var deleteRecursive,
-        node,
-        childrenIDs,
-        i;
-
-      deleteRecursive = function (nodeId) {
-        if (self._selfPatterns.hasOwnProperty(nodeId)) {
-          node = self._nodes[nodeId];
-
-          if (node) {
-            childrenIDs = node.childrenIDs;
-            for (i = 0; i < childrenIDs.length; i += 1) {
-              deleteRecursive(childrenIDs[i]);
-            }
-          }
-
-          delete self._selfPatterns[nodeId];
-        }
-      };
-
-      //call the cleanup recursively
-      deleteRecursive(id);
-
-      if (id === self._currentNodeId) {
-        self._selfPatterns[id] = { children: 0 };
-      }
-
-      self._client.updateTerritory(self._territoryId, self._selfPatterns);
+      // TODO: optimize the territory that it is listening to?
     };
   };
 
@@ -157,6 +129,7 @@ define([
         this._getObjectDescriptor(child)
       ),
       childrenNum: nodeJson.children.length,
+      color: nodeJson.attributes.color,
       //status: 'open' || 'closed' || 'LEAF' || 'opening' || 'CLOSING',
     };
   };
