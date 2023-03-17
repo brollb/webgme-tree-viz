@@ -12,12 +12,22 @@ define([
   "js/Constants",
   "js/Utils/GMEConcepts",
   "js/NodePropertyNames",
-], function (Logger, utils, GMETransformations, CONSTANTS, GMEConcepts, nodePropertyNames) {
+  "underscore",
+], function (
+    Logger,
+    utils,
+    GMETransformations,
+    CONSTANTS,
+    GMEConcepts,
+    nodePropertyNames,
+    _
+) {
   "use strict";
 
   console.log({GMETransformations});
   const {TransformationObserver} = GMETransformations;
   const SET_NAME = "visualizers";
+  const ENGINE_NAME = "GraphViz";
 
   var GraphVizControl;
 
@@ -34,9 +44,16 @@ define([
     this._transformObs = new TransformationObserver(
       this._client,
       core => new DefaultTransformation(core),
-      viewModel => {
+      async viewModel => {
         //const isNodeStillActive = (nodeId) => nodeId === this._currentNodeId;
-        const data = viewModel.map((node) => this._getObjectDescriptor(node));
+        // resolve the metamodel nodes to their names
+        const {core, rootNode} = await this.getCoreInstance();
+        const metanodes = core.getLibraryMetaNodes(rootNode, ENGINE_NAME);
+        const libraryMeta = new NodePathResolver(core, metanodes);
+        viewModel = viewModel.map(node => libraryMeta.resolveType(node));
+
+        console.log({viewModel});
+        const data = viewModel.map((node) => this._getObjectDescriptor(node, libraryMeta));
         console.log("set data to", data);
         this._graphVizWidget.setData(data[0]);
       }
@@ -114,22 +131,34 @@ define([
       const members = node.getMemberIds(SET_NAME);
       return members.find(
         (memberId) =>
-          node.getMemberAttribute(SET_NAME, memberId, "engine") === "GraphViz",
+          node.getMemberAttribute(SET_NAME, memberId, "engine") === ENGINE_NAME,
       );
     }
     // TODO: This will need to be updated when we support this properly.
     // That is, this should get the name, etc, from here
   };
 
-  GraphVizControl.prototype._getObjectDescriptor = function (nodeJson) {
+  GraphVizControl.prototype._getObjectDescriptor = function (nodeJson, libraryMeta) {
+    // get the children who are types of interactions (rm them from child list)
+    const [interactions, children] = _.partition(
+        nodeJson.children || [],
+        child => libraryMeta.isTypeOf(child, 'Interaction')
+    );
+
+    const interactionDict = Object.fromEntries(
+      interactions.map(nodeJson => [nodeJson.typeName, InteractionHandler.from(nodeJson)])
+    );
+      
+    // TODO: convert them to "Interactions" and actions
     return {
       id: nodeJson.path,
       name: nodeJson.attributes.name,
-      children: nodeJson.children.map((child) =>
-        this._getObjectDescriptor(child)
+      children: children.map((child) =>
+        this._getObjectDescriptor(child, libraryMeta)
       ),
       childrenNum: nodeJson.children.length,
       color: nodeJson.attributes.color,
+      interactions: interactionDict,
       //status: 'open' || 'closed' || 'LEAF' || 'opening' || 'CLOSING',
     };
   };
@@ -142,23 +171,6 @@ define([
           (err, result) => err ? reject(err) : resolve(result),
         ),
     );
-  };
-
-  GraphVizControl.prototype._onTerritoryLoaded = async function (node) {
-    console.log("territory loaded!", node);
-    if (this.transformation) {
-      await this._onUpdateWidget(this.transformation, node);
-    }
-  };
-
-  GraphVizControl.prototype._onUpdateWidget = async function (
-    transformation,
-    model,
-  ) {
-    const viewModelNodes = await transformation.apply(model);
-    const data = viewModelNodes.map((node) => this._getObjectDescriptor(node));
-    console.log("set data to", data);
-    this._graphVizWidget.setData(data[0]);
   };
 
   // PUBLIC METHODS
@@ -344,6 +356,61 @@ define([
         ))).flat(),
       }];
     }
+  }
+
+  class NodePathResolver {
+      constructor(core, nodeDict) {
+        this._core = core;
+        this._dict = nodeDict;
+      }
+
+      resolve(nodePath) {
+        const node = this._dict[nodePath];
+        if (node) {
+          return this._core.getAttribute(node, 'name');
+          
+        }
+      }
+
+      resolveType(node) {
+        if (node.pointers && node.pointers.base) {
+          node.typeName = this.resolve(node.pointers.base);
+        }
+        if (node.children) {
+          node.children = node.children.map(child => this.resolveType(child));
+        }
+        return node;
+      }
+
+      isTypeOf(node, typeName) {
+        const basePath = node.pointers.base;
+        let nodeIter = this._dict[basePath];
+        while (nodeIter) {
+          if (this._core.getAttribute(nodeIter, 'name') === typeName) {
+            return true;
+          }
+          nodeIter = this._core.getBase(nodeIter);
+        }
+
+        return false;
+      }
+  }
+
+  class InteractionHandler {
+      constructor(actions) {
+        // TODO: parse the actions
+      }
+
+      trigger() {
+        console.log('running interaction handler!');
+      }
+
+      static from(libraryMeta, nodeJson) {
+        console.log('parsing actions...');
+        console.log({nodeJson});
+        // TODO: parse the actions
+        return new InteractionHandler();
+      }
   }
 
   return GraphVizControl;
