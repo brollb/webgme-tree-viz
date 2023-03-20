@@ -145,8 +145,9 @@ define([
         child => libraryMeta.isTypeOf(child, 'Interaction')
     );
 
+    console.log({interactions});
     const interactionDict = Object.fromEntries(
-      interactions.map(nodeJson => [nodeJson.typeName, InteractionHandler.from(nodeJson)])
+      interactions.map(nodeJson => [nodeJson.typeName, InteractionHandler.from(nodeJson, libraryMeta)])
     );
       
     // TODO: convert them to "Interactions" and actions
@@ -398,18 +399,45 @@ define([
 
   class InteractionHandler {
       constructor(actions) {
-        // TODO: parse the actions
+        this.actions = actions;
       }
 
-      trigger() {
+      async trigger() {
         console.log('running interaction handler!');
+        await Promise.all(this.actions.map(act => act.run()));
       }
 
-      static from(libraryMeta, nodeJson) {
+      static from(nodeJson, libraryMeta) {
         console.log('parsing actions...');
         console.log({nodeJson});
+        const children = nodeJson.children;
+        // TODO: we should probably change the model to use references instead of connections...
+        // TODO: check if they are actions
+        const actions = children.filter(child => child.typeName === 'Prompt')  // FIXME
+          .map(nodeJson => new Prompt(nodeJson));
         // TODO: parse the actions
-        return new InteractionHandler();
+        // - Prompt
+        // - Select
+        // - SetAttribute
+        // - SetPointer
+        return new InteractionHandler(actions);
+      }
+  }
+
+  class Action {
+      run() {
+        throw new Error("Unimplemented!");
+      }
+  }
+
+  class Prompt {
+      constructor(nodeJson) {
+        this.message = nodeJson.attributes.message;
+      }
+
+      run() {
+        // TODO: store the response...
+        window.prompt(this.message);
       }
   }
 
