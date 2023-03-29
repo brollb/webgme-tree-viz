@@ -12,6 +12,7 @@ define([
   "js/Constants",
   "js/Utils/GMEConcepts",
   "js/NodePropertyNames",
+  './Actions',
   "underscore",
 ], function (
     Logger,
@@ -20,6 +21,7 @@ define([
     CONSTANTS,
     GMEConcepts,
     nodePropertyNames,
+    Actions,
     _
 ) {
   "use strict";
@@ -52,7 +54,6 @@ define([
         const libraryMeta = new NodePathResolver(core, metanodes);
         viewModel = viewModel.map(node => libraryMeta.resolveType(node));
 
-        console.log({viewModel});
         const data = viewModel.map((node) => this._getObjectDescriptor(node, libraryMeta));
         console.log("set data to", data);
         this._graphVizWidget.setData(data[0]);
@@ -145,7 +146,6 @@ define([
         child => libraryMeta.isTypeOf(child, 'Interaction')
     );
 
-    console.log({interactions});
     const interactionDict = Object.fromEntries(
       interactions.map(nodeJson => [nodeJson.typeName, InteractionHandler.from(nodeJson, libraryMeta)])
     );
@@ -404,42 +404,18 @@ define([
 
       async trigger() {
         console.log('running interaction handler!');
-        await Promise.all(this.actions.map(act => act.run()));
+        const initialData = {};
+        await Promise.all(this.actions.map(act => act.run(initialData)));
       }
 
       static from(nodeJson, libraryMeta) {
-        console.log('parsing actions...');
-        console.log({nodeJson});
-        const children = nodeJson.children;
         // TODO: we should probably change the model to use references instead of connections...
         // TODO: check if they are actions
-        const actions = children.filter(child => child.typeName === 'Prompt')  // FIXME
-          .map(nodeJson => new Prompt(nodeJson));
-        // TODO: parse the actions
-        // - Prompt
-        // - Select
-        // - SetAttribute
-        // - SetPointer
+        const actions = Actions.parse(nodeJson);
         return new InteractionHandler(actions);
       }
   }
 
-  class Action {
-      run() {
-        throw new Error("Unimplemented!");
-      }
-  }
-
-  class Prompt {
-      constructor(nodeJson) {
-        this.message = nodeJson.attributes.message;
-      }
-
-      run() {
-        // TODO: store the response...
-        window.prompt(this.message);
-      }
-  }
 
   return GraphVizControl;
 });

@@ -359,25 +359,25 @@ define([
   };
 
   GraphVizWidget.prototype._onNodeClick = function (d) {
-    switch (d.status) {
-      case CLOSED:
-        d.status = OPENING;
-        this._update(undefined);
-        this.onNodeOpen(d.id);
-        break;
-      case OPEN:
-        d.status = CLOSING;
-        d.children = undefined;
-        this._update(d);
-        this.onNodeClose(d.id);
-        break;
-      case OPENING:
-        break;
-      case CLOSING:
-        break;
-      case LEAF:
-        break;
-    }
+    // switch (d.status) {
+    //   case CLOSED:
+    //     d.status = OPENING;
+    //     this._update(undefined);
+    //     this.onNodeOpen(d.id);
+    //     break;
+    //   case OPEN:
+    //     d.status = CLOSING;
+    //     d.children = undefined;
+    //     this._update(d);
+    //     this.onNodeClose(d.id);
+    //     break;
+    //   case OPENING:
+    //     break;
+    //   case CLOSING:
+    //     break;
+    //   case LEAF:
+    //     break;
+    // }
   };
 
   GraphVizWidget.prototype._onNodeDblClick = function (d) {
