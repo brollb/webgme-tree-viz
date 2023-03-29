@@ -1,12 +1,14 @@
 # Notes
-- [ ] How to represent edits to the model?
-    - for now, they can be always there...
-    - in the future, it would be cool if we could add items to the context menu
-
 - [ ] debug undefined child nodes
     - why are they being created?
 
 - [ ] add on-drop handler
+    - this could create an instance of the dropped vocabulary
+        - we would need to make sure only vocabularies can be dropped
+        - [ ] add node drop interaction
+        - [ ] add guard to the node drop
+            - is the node a vocabulary?
+              - it can just be a simple pattern
 
 - [ ] is there a better way to define the metamodel for the visualizer which we can then import?
     - EMF?
@@ -60,4 +62,8 @@
 
 - [x] setAttribute only works the first time...
     - cannot set depth in territory to infinity
+
+- [x] How to represent edits to the model?
+    - for now, they can be always there...
+    - in the future, it would be cool if we could add items to the context menu
 
