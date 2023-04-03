@@ -10,6 +10,15 @@
             - is the node a vocabulary?
               - it can just be a simple pattern
 
+- [ ] add context menu node?
+    - select?
+
+- [ ] it is almost good enough to merge. Still needs:
+    - [ ] use UI library for select, confirm, prompt
+        - micromodal?
+    - [ ] implement Select action
+    - [ ] SetPointer
+
 - [ ] is there a better way to define the metamodel for the visualizer which we can then import?
     - EMF?
     - the problem rn is that there is a disconnect btwn the implementations for actions and the model
