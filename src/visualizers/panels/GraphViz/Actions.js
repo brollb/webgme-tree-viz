@@ -74,7 +74,12 @@ define([
       super();
       this.message = nodeJson.attributes.message;
       this.actions = parseActions(nodeJson);
-      this.options = []; // TODO: parse the options
+      console.log({ nodeJson });
+      this.options = nodeJson.children.filter((child) =>
+        child.typeName === "Option"
+      )
+        .map((child) => new Option(child));
+
       const answer = nodeJson.children.find((child) =>
         child.typeName === "Answer"
       );
@@ -87,10 +92,17 @@ define([
       // TODO: allow options to be dynamic?
       const answer = await Dialog.select(this.message, this.options);
       if (this.answerId) {
-        data[this.answerId] = answer;
+        data[this.answerId] = answer.id;
       }
 
       this.actions.forEach((action) => action.run(data));
+    }
+  }
+
+  class Option {
+    constructor(nodeJson) {
+      this.name = nodeJson.attributes.name;
+      this.id = nodeJson.attributes.id || this.name;
     }
   }
 
@@ -146,6 +158,10 @@ define([
         }
       },
     );
+  }
+
+  function parseOptions(parent) {
+    // TODO: create the options
   }
 
   function filterMap(list, fn) {
