@@ -159,6 +159,19 @@ define([
     }
   }
 
+  class SetActiveNode extends Action {
+    constructor(nodeJson, parent) {
+      super();
+      this.nodeJson = nodeJson;
+      this.nodePath = resolvePointerTarget(nodeJson.pointers.node, parent);
+    }
+
+    async run(data) {
+      const nodePath = this.nodePath.resolve(data);
+      WebGMEGlobal.State.registerActiveObject(nodePath);
+    }
+  }
+
   const ACTION_TYPES = [];
   function registerAction(actionClass) {
     ACTION_TYPES.push(actionClass);
@@ -196,7 +209,9 @@ define([
     Prompt,
     Select,
     Confirm,
+
     SetAttribute,
+    SetActiveNode,
     SetPointer,
   };
 
