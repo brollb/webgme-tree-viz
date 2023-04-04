@@ -23,20 +23,20 @@ define([
   console.log({ GMETransformations });
   const { TransformationObserver } = GMETransformations;
   const SET_NAME = "visualizers";
-  const ENGINE_NAME = "GraphViz";
+  const ENGINE_NAME = "TreeViz";
 
-  var GraphVizControl;
+  var TreeVizControl;
 
-  GraphVizControl = function (options) {
+  TreeVizControl = function (options) {
     this._logger = Logger.create(
-      "gme:Panels:GraphViz:GraphVizControl",
+      "gme:Panels:TreeViz:TreeVizControl",
       WebGMEGlobal.gmeConfig.client.log,
     );
 
     this._client = options.client;
 
     //initialize core collections and variables
-    this._graphVizWidget = options.widget;
+    this._treeVizWidget = options.widget;
     this._transformObs = new TransformationObserver(
       this._client,
       (core) => new DefaultTransformation(core),
@@ -52,7 +52,7 @@ define([
           this._getObjectDescriptor(node, libraryMeta)
         );
         console.log("set data to", data);
-        this._graphVizWidget.setData(data[0]);
+        this._treeVizWidget.setData(data[0]);
       },
     );
     this._currentNodeId = null;
@@ -65,42 +65,42 @@ define([
     this._logger.debug("Created");
   };
 
-  GraphVizControl.prototype._initWidgetEventHandlers = function () {
+  TreeVizControl.prototype._initWidgetEventHandlers = function () {
     var self = this;
 
-    this._graphVizWidget.onBackgroundDblClick = function () {
+    this._treeVizWidget.onBackgroundDblClick = function () {
       if (self._currentNodeParentId) {
         WebGMEGlobal.State.registerActiveObject(self._currentNodeParentId);
       }
     };
 
-    this._graphVizWidget.onNodeDblClick = function (id) {
+    this._treeVizWidget.onNodeDblClick = function (id) {
       WebGMEGlobal.State.registerActiveObject(id);
     };
 
-    this._graphVizWidget.onExtendMenuItems = (nodeId, menuItems) => {
+    this._treeVizWidget.onExtendMenuItems = (nodeId, menuItems) => {
       return this.onExtendMenuItems(nodeId, menuItems);
     };
 
-    this._graphVizWidget.deleteNode = (nodeId) => {
+    this._treeVizWidget.deleteNode = (nodeId) => {
       this._client.deleteNode(nodeId);
     };
 
-    this._graphVizWidget.setName = (nodeId, name) => {
+    this._treeVizWidget.setName = (nodeId, name) => {
       this._client.setAttribute(nodeId, "name", name);
     };
 
-    this._graphVizWidget.onNodeOpen = function (id) {
+    this._treeVizWidget.onNodeOpen = function (id) {
       //self._selfPatterns[id] = {children: 1};
       //self._client.updateTerritory(self._territoryId, self._selfPatterns);
     };
 
-    this._graphVizWidget.onNodeClose = function (id) {
+    this._treeVizWidget.onNodeClose = function (id) {
       // TODO: optimize the territory that it is listening to?
     };
   };
 
-  GraphVizControl.prototype.selectedObjectChanged = async function (nodeId) {
+  TreeVizControl.prototype.selectedObjectChanged = async function (nodeId) {
     var self = this;
 
     // TODO: get the path of the transformation node
@@ -116,12 +116,12 @@ define([
 
       const node = this._client.getNode(nodeId);
       const title = node.getAttribute("name") || "";
-      this._graphVizWidget.setTitle(title.toUpperCase());
+      this._treeVizWidget.setTitle(title.toUpperCase());
       this._currentNodeParentId = node.getParentId();
     }
   };
 
-  GraphVizControl.prototype._getTransformationNodeID = function (nodeId) {
+  TreeVizControl.prototype._getTransformationNodeID = function (nodeId) {
     const node = this._client.getNode(nodeId);
     const sets = node.getSetNames();
     if (sets.includes(SET_NAME)) {
@@ -135,7 +135,7 @@ define([
     // That is, this should get the name, etc, from here
   };
 
-  GraphVizControl.prototype._getObjectDescriptor = function (
+  TreeVizControl.prototype._getObjectDescriptor = function (
     nodeJson,
     libraryMeta,
   ) {
@@ -168,7 +168,7 @@ define([
     };
   };
 
-  GraphVizControl.prototype.getCoreInstance = async function () {
+  TreeVizControl.prototype.getCoreInstance = async function () {
     return await new Promise(
       (resolve, reject) =>
         this._client.getCoreInstance(
@@ -179,14 +179,14 @@ define([
   };
 
   // PUBLIC METHODS
-  GraphVizControl.prototype.destroy = function () {
+  TreeVizControl.prototype.destroy = function () {
     this._transformObs.disconnect();
 
     this._detachClientEventListeners();
     this._removeToolbarItems();
   };
 
-  GraphVizControl.prototype._stateActiveObjectChanged = function (
+  TreeVizControl.prototype._stateActiveObjectChanged = function (
     model,
     activeObjectId,
   ) {
@@ -200,7 +200,7 @@ define([
     }
   };
 
-  GraphVizControl.prototype._attachClientEventListeners = function () {
+  TreeVizControl.prototype._attachClientEventListeners = function () {
     this._detachClientEventListeners();
     WebGMEGlobal.State.on(
       "change:" + CONSTANTS.STATE_ACTIVE_OBJECT,
@@ -209,14 +209,14 @@ define([
     );
   };
 
-  GraphVizControl.prototype._detachClientEventListeners = function () {
+  TreeVizControl.prototype._detachClientEventListeners = function () {
     WebGMEGlobal.State.off(
       "change:" + CONSTANTS.STATE_ACTIVE_OBJECT,
       this._stateActiveObjectChanged,
     );
   };
 
-  GraphVizControl.prototype.onActivate = function () {
+  TreeVizControl.prototype.onActivate = function () {
     this._attachClientEventListeners();
     this._displayToolbarItems();
 
@@ -228,12 +228,12 @@ define([
     }
   };
 
-  GraphVizControl.prototype.onDeactivate = function () {
+  TreeVizControl.prototype.onDeactivate = function () {
     this._detachClientEventListeners();
     this._hideToolbarItems();
   };
 
-  GraphVizControl.prototype._displayToolbarItems = function () {
+  TreeVizControl.prototype._displayToolbarItems = function () {
     var i;
 
     if (this._toolbarInitialized === true) {
@@ -245,7 +245,7 @@ define([
     }
   };
 
-  GraphVizControl.prototype._hideToolbarItems = function () {
+  TreeVizControl.prototype._hideToolbarItems = function () {
     var i;
 
     if (this._toolbarInitialized === true) {
@@ -255,7 +255,7 @@ define([
     }
   };
 
-  GraphVizControl.prototype._removeToolbarItems = function () {
+  TreeVizControl.prototype._removeToolbarItems = function () {
     var i;
 
     if (this._toolbarInitialized === true) {
@@ -265,7 +265,7 @@ define([
     }
   };
 
-  GraphVizControl.prototype._initializeToolbar = function () {
+  TreeVizControl.prototype._initializeToolbar = function () {
     var toolBar = WebGMEGlobal.Toolbar;
 
     this._toolbarItems = [];
@@ -288,7 +288,7 @@ define([
     this._toolbarInitialized = true;
   };
 
-  GraphVizControl.prototype._addSplitPanelToolbarBtns = function (toolbarEl) {
+  TreeVizControl.prototype._addSplitPanelToolbarBtns = function (toolbarEl) {
     var self = this,
       connBtn = $(
         '<span class="split-panel-toolbar-btn no-print glyphicon glyphicon-filter"></span>',
@@ -317,7 +317,7 @@ define([
     return toolbarEl;
   };
 
-  GraphVizControl.prototype.onExtendMenuItems = function (nodeId, menuItems) {
+  TreeVizControl.prototype.onExtendMenuItems = function (nodeId, menuItems) {
     const node = this._client.getNode(nodeId);
     const childIds = Object.keys(node?.getValidChildrenTypesDetailed() || {});
     if (childIds.length > 0) {
@@ -419,5 +419,5 @@ define([
     }
   }
 
-  return GraphVizControl;
+  return TreeVizControl;
 });

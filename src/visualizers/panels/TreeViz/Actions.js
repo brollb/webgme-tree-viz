@@ -1,5 +1,5 @@
 define([
-  "webgme-graph-viz/dialog/index",
+  "webgme-tree-viz/dialog/index",
 ], function (
   Dialog,
 ) {

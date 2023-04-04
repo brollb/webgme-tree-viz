@@ -8,17 +8,17 @@
 define(["js/Widgets/ZoomWidget/ZoomWidget"], function (ZoomWidget) {
   "use strict";
 
-  var GraphVizWidgetZoom;
+  var TreeVizWidgetZoom;
 
-  GraphVizWidgetZoom = function () {
+  TreeVizWidgetZoom = function () {
   };
 
-  GraphVizWidgetZoom.prototype._initZoom = function (opts) {
+  TreeVizWidgetZoom.prototype._initZoom = function (opts) {
     opts = opts || {};
     var zoomWidget = new ZoomWidget({
       zoomValues: opts.zoomValues,
-      class: "graph-viz-zoom-container",
-      sliderClass: "graph-viz-zoom-slider",
+      class: "tree-viz-zoom-container",
+      sliderClass: "tree-viz-zoom-slider",
       zoomTarget: this._el.find("svg"),
     });
 
@@ -29,7 +29,7 @@ define(["js/Widgets/ZoomWidget/ZoomWidget"], function (ZoomWidget) {
     this._addZoomMouseHandler(this._el);
   };
 
-  GraphVizWidgetZoom.prototype._addZoomMouseHandler = function (el) {
+  TreeVizWidgetZoom.prototype._addZoomMouseHandler = function (el) {
     var self = this;
 
     //MOUSE ENTER WORKAROUND
@@ -73,5 +73,5 @@ define(["js/Widgets/ZoomWidget/ZoomWidget"], function (ZoomWidget) {
     });
   };
 
-  return GraphVizWidgetZoom;
+  return TreeVizWidgetZoom;
 });

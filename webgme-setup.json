@@ -1,20 +1,20 @@
 {
   "components": {
     "visualizers": {
-      "GraphViz": {
-        "src": "panels/GraphViz/GraphVizPanel",
-        "title": "GraphViz",
-        "panel": "src/visualizers/panels/GraphViz",
+      "TreeViz": {
+        "src": "panels/TreeViz/TreeVizPanel",
+        "title": "TreeViz",
+        "panel": "src/visualizers/panels/TreeViz",
         "secondary": false,
-        "widget": "src/visualizers/widgets/GraphViz"
+        "widget": "src/visualizers/widgets/TreeViz"
       }
     },
     "seeds": {
-      "GraphViz": {
-        "src": "src/seeds/GraphViz"
+      "TreeViz": {
+        "src": "src/seeds/TreeViz"
       },
-      "TestGraphViz": {
-        "src": "src/seeds/TestGraphViz"
+      "TestTreeViz": {
+        "src": "src/seeds/TestTreeViz"
       }
     },
     "plugins": {},
