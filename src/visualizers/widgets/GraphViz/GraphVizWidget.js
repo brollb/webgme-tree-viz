@@ -143,7 +143,7 @@ define([
     var getOpenStatus = function (d) {
       var status = LEAF;
 
-        // FIXME: update this
+      // FIXME: update this
       if (d.childrenNum > 0) {
         status = CLOSED;
 
@@ -381,12 +381,10 @@ define([
   };
 
   GraphVizWidget.prototype._onNodeDblClick = function (d) {
-    console.log('dbl click on', d.in);
     const handler = d.interactions.DoubleClick;
     if (handler) {
       handler.trigger();
     }
-    //this.onNodeDblClick(d.id);
   };
 
   GraphVizWidget.prototype.setData = function (data) {

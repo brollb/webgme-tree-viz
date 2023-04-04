@@ -193,10 +193,6 @@ define([
     );
   }
 
-  function parseOptions(parent) {
-    // TODO: create the options
-  }
-
   function filterMap(list, fn) {
     return list.reduce((results, item) => {
       const mapped = fn(item);
