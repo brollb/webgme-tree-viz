@@ -7,7 +7,7 @@
 
 define([
   "js/logger",
-  "webgme-transformations/dist/common/index",
+  "webgme-transformations/dist/common/index", // FIXME: remove dist/common
   "js/Constants",
   "./Actions",
   "underscore",

@@ -17,7 +17,11 @@
         "src": "src/seeds/TestGraphViz"
       }
     },
-    "plugins": {}
+    "plugins": {},
+    "addons": {},
+    "layouts": {},
+    "decorators": {},
+    "routers": {}
   },
   "dependencies": {
     "visualizers": {},
@@ -27,6 +31,10 @@
         "project": "webgme-transformations",
         "path": "node_modules/webgme-transformations/src/plugins/ApplyModelTransformation"
       }
-    }
+    },
+    "addons": {},
+    "layouts": {},
+    "decorators": {},
+    "routers": {}
   }
 }
