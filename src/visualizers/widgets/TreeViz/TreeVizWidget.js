@@ -8,16 +8,16 @@
 
 define([
   "js/logger",
-  "./GraphVizWidget.Zoom",
+  "./TreeVizWidget.Zoom",
   "js/Utils/ComponentSettings",
   "d3",
   "jquery-contextMenu",
-  "css!./styles/GraphVizWidget.css",
-], function (Logger, GraphVizWidgetZoom, ComponentSettings) {
+  "css!./styles/TreeVizWidget.css",
+], function (Logger, TreeVizWidgetZoom, ComponentSettings) {
   "use strict";
 
-  var GraphVizWidget,
-    GRAPH_VIZ_CLASS = "graph-viz",
+  var TreeVizWidget,
+    GRAPH_VIZ_CLASS = "tree-viz",
     DURATION = 750,
     MARGIN = 20,
     i = 0,
@@ -29,16 +29,16 @@ define([
     NODE_SIZE = 15,
     TREE_LEVEL_DISTANCE = 180;
 
-  GraphVizWidget = function (container /*, params*/) {
-    var config = GraphVizWidget.getDefaultConfig();
+  TreeVizWidget = function (container /*, params*/) {
+    var config = TreeVizWidget.getDefaultConfig();
     this._logger = Logger.create(
-      "gme:Widgets:GraphViz:GraphVizWidget",
+      "gme:Widgets:TreeViz:TreeVizWidget",
       WebGMEGlobal.gmeConfig.client.log,
     );
 
     ComponentSettings.resolveWithWebGMEGlobal(
       config,
-      GraphVizWidget.getComponentId(),
+      TreeVizWidget.getComponentId(),
     );
     //merge dfault values with the given parameters
     this._el = container;
@@ -48,10 +48,10 @@ define([
     //init zoom related UI and handlers
     this._initZoom(config);
 
-    this._logger.debug("GraphVizWidget ctor finished");
+    this._logger.debug("TreeVizWidget ctor finished");
   };
 
-  GraphVizWidget.prototype._initialize = function () {
+  TreeVizWidget.prototype._initialize = function () {
     var width = this._el.width(),
       height = this._el.height(),
       self = this;
@@ -85,7 +85,7 @@ define([
     });
   };
 
-  GraphVizWidget.prototype._createContextMenu = function ($trigger) {
+  TreeVizWidget.prototype._createContextMenu = function ($trigger) {
     const nodeData = $trigger[0].__data__;
     const nodeId = nodeData.id;
     const menuItems = {
@@ -109,7 +109,7 @@ define([
     return menuItems;
   };
 
-  GraphVizWidget.prototype.onWidgetContainerResize = function (width, height) {
+  TreeVizWidget.prototype.onWidgetContainerResize = function (width, height) {
     //call our own resize handler
     this._resizeD3Tree(width, height);
     if (this._root) {
@@ -117,7 +117,7 @@ define([
     }
   };
 
-  GraphVizWidget.prototype._resizeD3Tree = function (width, height) {
+  TreeVizWidget.prototype._resizeD3Tree = function (width, height) {
     var ew = this._el.width(),
       eh = this._el.height();
 
@@ -128,7 +128,7 @@ define([
     this.__svg.attr("width", width).attr("height", height);
   };
 
-  GraphVizWidget.prototype._update = function (source) {
+  TreeVizWidget.prototype._update = function (source) {
     var self = this;
 
     // Compute the new tree layout.
@@ -358,7 +358,7 @@ define([
     }
   };
 
-  GraphVizWidget.prototype._onNodeClick = function (d) {
+  TreeVizWidget.prototype._onNodeClick = function (d) {
     const handler = d.interactions.Click;
     if (handler) {
       handler.trigger();
@@ -384,14 +384,14 @@ define([
     // }
   };
 
-  GraphVizWidget.prototype._onNodeDblClick = function (d) {
+  TreeVizWidget.prototype._onNodeDblClick = function (d) {
     const handler = d.interactions.DoubleClick;
     if (handler) {
       handler.trigger();
     }
   };
 
-  GraphVizWidget.prototype.setData = function (data) {
+  TreeVizWidget.prototype.setData = function (data) {
     this.__root = this._root;
 
     this._root = $.extend(true, {}, data);
@@ -441,37 +441,37 @@ define([
     }
   };
 
-  GraphVizWidget.prototype.onNodeOpen = function (/*id*/) {
+  TreeVizWidget.prototype.onNodeOpen = function (/*id*/) {
   };
 
-  GraphVizWidget.prototype.onNodeClose = function (/*id*/) {
+  TreeVizWidget.prototype.onNodeClose = function (/*id*/) {
   };
 
-  GraphVizWidget.prototype.onNodeDblClick = function (/*id*/) {
+  TreeVizWidget.prototype.onNodeDblClick = function (/*id*/) {
   };
 
-  GraphVizWidget.prototype.onBackgroundDblClick = function () {
+  TreeVizWidget.prototype.onBackgroundDblClick = function () {
   };
 
-  GraphVizWidget.prototype.destroy = function () {
+  TreeVizWidget.prototype.destroy = function () {
     this.__svg.remove();
     this.__svg = undefined;
   };
 
-  GraphVizWidget.prototype.onExtendMenuItems = function (
+  TreeVizWidget.prototype.onExtendMenuItems = function (
     /*nodeId, menuItems*/
   ) {
   };
 
-  GraphVizWidget.prototype.onActivate = function () {
+  TreeVizWidget.prototype.onActivate = function () {
   };
 
-  GraphVizWidget.prototype.onDeactivate = function () {
+  TreeVizWidget.prototype.onDeactivate = function () {
   };
 
-  _.extend(GraphVizWidget.prototype, GraphVizWidgetZoom.prototype);
+  _.extend(TreeVizWidget.prototype, TreeVizWidgetZoom.prototype);
 
-  GraphVizWidget.getDefaultConfig = function () {
+  TreeVizWidget.getDefaultConfig = function () {
     return {
       zoomValues: [
         0.1,
@@ -497,9 +497,9 @@ define([
     };
   };
 
-  GraphVizWidget.getComponentId = function () {
-    return "GenericUIGraphVizWidget";
+  TreeVizWidget.getComponentId = function () {
+    return "GenericUITreeVizWidget";
   };
 
-  return GraphVizWidget;
+  return TreeVizWidget;
 });

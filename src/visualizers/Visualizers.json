@@ -1,8 +1,8 @@
 [
   {
-    "id": "GraphVizv2",
-    "title": "GraphVizv2",
-    "panel": "panels/GraphViz/GraphVizPanel",
+    "id": "TreeViz",
+    "title": "TreeViz",
+    "panel": "panels/TreeViz/TreeVizPanel",
     "DEBUG_ONLY": false
   }
 ]

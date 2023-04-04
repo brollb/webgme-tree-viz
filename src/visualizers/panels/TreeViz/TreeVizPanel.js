@@ -8,20 +8,20 @@
 define([
   "js/PanelBase/PanelBaseWithHeader",
   "js/PanelManager/IActivePanel",
-  "widgets/GraphViz/GraphVizWidget",
-  "./GraphVizControl",
+  "widgets/TreeViz/TreeVizWidget",
+  "./TreeVizControl",
 ], function (
   PanelBaseWithHeader,
   IActivePanel,
-  GraphVizWidget,
-  GraphVizPanelControl,
+  TreeVizWidget,
+  TreeVizPanelControl,
 ) {
   "use strict";
 
-  const GraphVizPanel = function (layoutManager, params) {
+  const TreeVizPanel = function (layoutManager, params) {
     var options = {};
     //set properties from options
-    options[PanelBaseWithHeader.OPTIONS.LOGGER_INSTANCE_NAME] = "GraphVizPanel";
+    options[PanelBaseWithHeader.OPTIONS.LOGGER_INSTANCE_NAME] = "TreeVizPanel";
     options[PanelBaseWithHeader.OPTIONS.FLOATING_TITLE] = true;
 
     //call parent's constructor
@@ -32,26 +32,26 @@ define([
     //initialize UI
     this._initialize();
 
-    this.logger.debug("GraphVizPanel ctor finished");
+    this.logger.debug("TreeVizPanel ctor finished");
   };
 
   //inherit from PanelBaseWithHeader
-  _.extend(GraphVizPanel.prototype, PanelBaseWithHeader.prototype);
-  _.extend(GraphVizPanel.prototype, IActivePanel.prototype);
+  _.extend(TreeVizPanel.prototype, PanelBaseWithHeader.prototype);
+  _.extend(TreeVizPanel.prototype, IActivePanel.prototype);
 
-  GraphVizPanel.prototype._initialize = function () {
+  TreeVizPanel.prototype._initialize = function () {
     var self = this;
 
     //set Widget title
     this.setTitle("");
 
-    this.widget = new GraphVizWidget(this.$el);
+    this.widget = new TreeVizWidget(this.$el);
 
     this.widget.setTitle = function (title) {
       self.setTitle(title);
     };
 
-    this.control = new GraphVizPanelControl({
+    this.control = new TreeVizPanelControl({
       client: this._client,
       widget: this.widget,
     });
@@ -59,7 +59,7 @@ define([
     this.onActivate();
   };
 
-  GraphVizPanel.prototype.getSplitPanelToolbarEl = function () {
+  TreeVizPanel.prototype.getSplitPanelToolbarEl = function () {
     this._splitPanelToolbarEl = IActivePanel.prototype.getSplitPanelToolbarEl
       .call(this);
 
@@ -75,7 +75,7 @@ define([
     return this._splitPanelToolbarEl;
   };
 
-  GraphVizPanel.prototype.afterAppend = function () {
+  TreeVizPanel.prototype.afterAppend = function () {
     PanelBaseWithHeader.prototype.afterAppend.call(this);
     // At this point the split-panel has added its buttons (the maximize)
     // and we can modify the look of all btns.
@@ -89,19 +89,19 @@ define([
 
   /* OVERRIDE FROM WIDGET-WITH-HEADER */
   /* METHOD CALLED WHEN THE WIDGET'S READ-ONLY PROPERTY CHANGES */
-  GraphVizPanel.prototype.onReadOnlyChanged = function (isReadOnly) {
+  TreeVizPanel.prototype.onReadOnlyChanged = function (isReadOnly) {
     //apply parent's onReadOnlyChanged
     PanelBaseWithHeader.prototype.onReadOnlyChanged.call(this, isReadOnly);
 
     //this._graphVizWidget.setReadOnly(isReadOnly);
   };
 
-  GraphVizPanel.prototype.onResize = function (width, height) {
+  TreeVizPanel.prototype.onResize = function (width, height) {
     this.logger.debug("onResize --> width: " + width + ", height: " + height);
     this.widget.onWidgetContainerResize(width, height);
   };
 
-  GraphVizPanel.prototype.destroy = function () {
+  TreeVizPanel.prototype.destroy = function () {
     this.control.destroy();
     this.widget.destroy();
 
@@ -110,23 +110,23 @@ define([
     WebGMEGlobal.Toolbar.refresh();
   };
 
-  GraphVizPanel.prototype.onActivate = function () {
+  TreeVizPanel.prototype.onActivate = function () {
     this.widget.onActivate();
     this.control.onActivate();
     WebGMEGlobal.KeyboardManager.setListener(this.widget);
     WebGMEGlobal.Toolbar.refresh();
   };
 
-  GraphVizPanel.prototype.onDeactivate = function () {
+  TreeVizPanel.prototype.onDeactivate = function () {
     this.widget.onDeactivate();
     this.control.onDeactivate();
     WebGMEGlobal.KeyboardManager.setListener(undefined);
     WebGMEGlobal.Toolbar.refresh();
   };
 
-  GraphVizPanel.prototype.getValidTypesInfo = function (/*nodeId, aspect*/) {
+  TreeVizPanel.prototype.getValidTypesInfo = function (/*nodeId, aspect*/) {
     return {};
   };
 
-  return GraphVizPanel;
+  return TreeVizPanel;
 });

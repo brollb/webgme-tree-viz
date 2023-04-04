@@ -7,9 +7,9 @@ var config = require('webgme/config/config.default'),
     validateConfig = require('webgme/config/validator');
 
 // The paths can be loaded from the webgme-setup.json
-config.plugin.basePaths.push(__dirname + '/../node_modules/webgme-transformations/dist/plugins');
-config.seedProjects.basePaths.push(__dirname + '/../src/seeds/GraphViz');
-config.seedProjects.basePaths.push(__dirname + '/../src/seeds/TestGraphViz');
+config.plugin.basePaths.push(__dirname + '/../node_modules/webgme-transformations/src/plugins');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/TreeViz');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/TestTreeViz');
 
 
 
@@ -22,14 +22,14 @@ config.visualization.panelPaths.push(__dirname + '/../src/visualizers/panels');
 config.visualization.visualizerDescriptors.push(__dirname + '/../src/visualizers/Visualizers.json');
 // Add requirejs paths
 config.requirejsPaths = {
-  'ApplyModelTransformation': 'node_modules/webgme-transformations/dist/plugins/ApplyModelTransformation',
+  'ApplyModelTransformation': 'node_modules/webgme-transformations/src/plugins/ApplyModelTransformation',
   'panels': './src/visualizers/panels',
   'widgets': './src/visualizers/widgets',
-  'webgme-transformations': './node_modules/webgme-transformations/dist/common',
-  'webgme-graph-viz': './src/common'
+  'webgme-transformations': './node_modules/webgme-transformations/src/common',
+  'webgme-tree-viz': './src/common'
 };
 
 
-config.mongo.uri = 'mongodb://127.0.0.1:27017/webgme_graph_viz';
+config.mongo.uri = 'mongodb://127.0.0.1:27017/webgme_tree_viz';
 validateConfig(config);
 module.exports = config;

@@ -1,12 +1,13 @@
 /**
  * @author rkereskenyi / https://github.com/rkereskenyi
+ * @author brollb / https://github.com/brollb
  */
 
 $node-stroke-color: steelblue;
 $node-fill-color: #FFF;
 $link-stroke-color: #CCC;
 
-.graph-viz {
+.tree-viz {
   outline: none;
 
   .node {
@@ -30,7 +31,7 @@ $link-stroke-color: #CCC;
   }
 }
 
-.graph-viz-zoom-container {
+.tree-viz-zoom-container {
   position: absolute;
   top: 40px;
   left: 10px;
