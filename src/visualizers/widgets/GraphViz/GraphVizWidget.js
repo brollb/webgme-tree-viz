@@ -359,6 +359,10 @@ define([
   };
 
   GraphVizWidget.prototype._onNodeClick = function (d) {
+    const handler = d.interactions.Click;
+    if (handler) {
+      handler.trigger();
+    }
     // switch (d.status) {
     //   case CLOSED:
     //     d.status = OPENING;
