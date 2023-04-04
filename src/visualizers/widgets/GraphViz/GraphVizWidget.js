@@ -143,6 +143,7 @@ define([
     var getOpenStatus = function (d) {
       var status = LEAF;
 
+      // FIXME: update this
       if (d.childrenNum > 0) {
         status = CLOSED;
 
@@ -214,8 +215,13 @@ define([
 
     nodeUpdate.select("circle")
       .style("fill", function (d) {
+        if (d.color) {
+          return d.color;
+        }
+
         var status = d.status,
           color = "#FFFFFF";
+
         if (status === CLOSED) {
           color = "lightsteelblue";
         } else if (status === OPENING) {
@@ -353,29 +359,36 @@ define([
   };
 
   GraphVizWidget.prototype._onNodeClick = function (d) {
-    switch (d.status) {
-      case CLOSED:
-        d.status = OPENING;
-        this._update(undefined);
-        this.onNodeOpen(d.id);
-        break;
-      case OPEN:
-        d.status = CLOSING;
-        d.children = undefined;
-        this._update(d);
-        this.onNodeClose(d.id);
-        break;
-      case OPENING:
-        break;
-      case CLOSING:
-        break;
-      case LEAF:
-        break;
+    const handler = d.interactions.Click;
+    if (handler) {
+      handler.trigger();
     }
+    // switch (d.status) {
+    //   case CLOSED:
+    //     d.status = OPENING;
+    //     this._update(undefined);
+    //     this.onNodeOpen(d.id);
+    //     break;
+    //   case OPEN:
+    //     d.status = CLOSING;
+    //     d.children = undefined;
+    //     this._update(d);
+    //     this.onNodeClose(d.id);
+    //     break;
+    //   case OPENING:
+    //     break;
+    //   case CLOSING:
+    //     break;
+    //   case LEAF:
+    //     break;
+    // }
   };
 
   GraphVizWidget.prototype._onNodeDblClick = function (d) {
-    this.onNodeDblClick(d.id);
+    const handler = d.interactions.DoubleClick;
+    if (handler) {
+      handler.trigger();
+    }
   };
 
   GraphVizWidget.prototype.setData = function (data) {

@@ -7,14 +7,23 @@
 
 define([
   "js/logger",
-  "webgme-graph-viz/utils",
+  "webgme-transformations/dist/common/index", // FIXME: remove dist/common
   "js/Constants",
-  "js/Utils/GMEConcepts",
-  "js/NodePropertyNames",
-], function (Logger, utils, CONSTANTS, GMEConcepts, nodePropertyNames) {
+  "./Actions",
+  "underscore",
+], function (
+  Logger,
+  GMETransformations,
+  CONSTANTS,
+  Actions,
+  _,
+) {
   "use strict";
 
+  console.log({ GMETransformations });
+  const { TransformationObserver } = GMETransformations;
   const SET_NAME = "visualizers";
+  const ENGINE_NAME = "GraphViz";
 
   var GraphVizControl;
 
@@ -28,7 +37,24 @@ define([
 
     //initialize core collections and variables
     this._graphVizWidget = options.widget;
+    this._transformObs = new TransformationObserver(
+      this._client,
+      (core) => new DefaultTransformation(core),
+      async (viewModel) => {
+        //const isNodeStillActive = (nodeId) => nodeId === this._currentNodeId;
+        // resolve the metamodel nodes to their names
+        const { core, rootNode } = await this.getCoreInstance();
+        const metanodes = core.getLibraryMetaNodes(rootNode, ENGINE_NAME);
+        const libraryMeta = new NodePathResolver(core, metanodes);
+        viewModel = viewModel.map((node) => libraryMeta.resolveType(node));
 
+        const data = viewModel.map((node) =>
+          this._getObjectDescriptor(node, libraryMeta)
+        );
+        console.log("set data to", data);
+        this._graphVizWidget.setData(data[0]);
+      },
+    );
     this._currentNodeId = null;
     this._currentNodeParentId = undefined;
 
@@ -70,131 +96,29 @@ define([
     };
 
     this._graphVizWidget.onNodeClose = function (id) {
-      var deleteRecursive,
-        node,
-        childrenIDs,
-        i;
-
-      deleteRecursive = function (nodeId) {
-        if (self._selfPatterns.hasOwnProperty(nodeId)) {
-          node = self._nodes[nodeId];
-
-          if (node) {
-            childrenIDs = node.childrenIDs;
-            for (i = 0; i < childrenIDs.length; i += 1) {
-              deleteRecursive(childrenIDs[i]);
-            }
-          }
-
-          delete self._selfPatterns[nodeId];
-        }
-      };
-
-      //call the cleanup recursively
-      deleteRecursive(id);
-
-      if (id === self._currentNodeId) {
-        self._selfPatterns[id] = { children: 0 };
-      }
-
-      self._client.updateTerritory(self._territoryId, self._selfPatterns);
+      // TODO: optimize the territory that it is listening to?
     };
   };
 
   GraphVizControl.prototype.selectedObjectChanged = async function (nodeId) {
     var self = this;
 
-    this._logger.debug("activeObject nodeId '" + nodeId + "'");
-
-    //remove current territory patterns
-    if (this._currentNodeId) {
-      this._client.removeUI(this._territoryId);
-    }
-
+    // TODO: get the path of the transformation node
     this._currentNodeId = nodeId;
     this._currentNodeParentId = undefined;
 
     this._nodes = {};
 
     if (typeof this._currentNodeId === "string") {
-      //put new node's info into territory rules
-      this._selfPatterns = {};
-      this._selfPatterns[nodeId] = { children: Infinity };
+      const transNodeId = this._getTransformationNodeID(nodeId);
+      console.log("observe", nodeId, transNodeId);
+      this._transformObs.observe(nodeId, transNodeId);
 
       const node = this._client.getNode(nodeId);
       const title = node.getAttribute("name") || "";
       this._graphVizWidget.setTitle(title.toUpperCase());
-
       this._currentNodeParentId = node.getParentId();
-
-      const isNodeStillActive = (nodeId) => nodeId === this._currentNodeId;
-      this._territoryId = this._client.addUI(
-        this,
-        () =>
-          utils.chainWhile(
-            () => isNodeStillActive(nodeId),
-            [
-              () => this.getCoreInstance(),
-              ({ core, rootNode }) => core.loadByPath(rootNode, nodeId),
-              (node) => this._onTerritoryLoaded(node),
-            ],
-          ),
-      );
-
-      this._client.updateTerritory(this._territoryId, this._selfPatterns);
-
-      // update the territory
-      const transNodeID = this._getTransformationNodeID(nodeId);
-      console.log("found transformation?", !!transNodeID);
-      if (transNodeID) {
-        this._transformationTerritory = this._client.addUI(
-          this,
-          () =>
-            utils.chainWhile(
-              () => isNodeStillActive(nodeId),
-              [
-                () => this.getCoreInstance(),
-                async ({ core, rootNode }) => {
-                  const node = await core.loadByPath(rootNode, nodeId);
-                  const transformation = await Transformation.fromNode(
-                    core,
-                    node,
-                  );
-                  return { node, transformation };
-                },
-                ({ node, transformation }) =>
-                  this._setTransformation(node, transformation),
-              ],
-            ),
-        );
-
-        const pattern = {};
-        pattern[transNodeID] = { children: Infinity };
-        this._client.updateTerritory(this._transformationTerritory, pattern);
-      } else {
-        utils.chainWhile(
-          () => isNodeStillActive(nodeId),
-          [
-            () => this.getCoreInstance(),
-            async ({ core, rootNode }) => {
-              const node = await core.loadByPath(rootNode, nodeId);
-              const transformation = new DefaultTransformation(core);
-              return { node, transformation };
-            },
-            ({ node, transformation }) =>
-              this._setTransformation(node, transformation),
-          ],
-        );
-      }
     }
-  };
-
-  GraphVizControl.prototype._setTransformation = function (
-    node,
-    transformation,
-  ) {
-    this.transformation = transformation;
-    this._onUpdateWidget(transformation, node);
   };
 
   GraphVizControl.prototype._getTransformationNodeID = function (nodeId) {
@@ -204,21 +128,42 @@ define([
       const members = node.getMemberIds(SET_NAME);
       return members.find(
         (memberId) =>
-          node.getMemberAttribute(SET_NAME, memberId, "engine") === "GraphViz",
+          node.getMemberAttribute(SET_NAME, memberId, "engine") === ENGINE_NAME,
       );
     }
     // TODO: This will need to be updated when we support this properly.
     // That is, this should get the name, etc, from here
   };
 
-  GraphVizControl.prototype._getObjectDescriptor = function (nodeJson) {
+  GraphVizControl.prototype._getObjectDescriptor = function (
+    nodeJson,
+    libraryMeta,
+  ) {
+    // get the children who are types of interactions (rm them from child list)
+    const [interactions, children] = _.partition(
+      nodeJson.children || [],
+      (child) => libraryMeta.isTypeOf(child, "Interaction"),
+    );
+
+    const interactionDict = Object.fromEntries(
+      interactions.map(
+        (nodeJson) => [
+          nodeJson.typeName,
+          InteractionHandler.from(nodeJson, libraryMeta),
+        ],
+      ),
+    );
+
+    // TODO: convert them to "Interactions" and actions
     return {
       id: nodeJson.path,
       name: nodeJson.attributes.name,
-      children: nodeJson.children.map((child) =>
-        this._getObjectDescriptor(child)
+      children: children.map((child) =>
+        this._getObjectDescriptor(child, libraryMeta)
       ),
       childrenNum: nodeJson.children.length,
+      color: nodeJson.attributes.color,
+      interactions: interactionDict,
       //status: 'open' || 'closed' || 'LEAF' || 'opening' || 'CLOSING',
     };
   };
@@ -233,28 +178,9 @@ define([
     );
   };
 
-  GraphVizControl.prototype._onTerritoryLoaded = async function (node) {
-    console.log("territory loaded!", node);
-    if (this.transformation) {
-      await this._onUpdateWidget(this.transformation, node);
-    }
-  };
-
-  GraphVizControl.prototype._onUpdateWidget = async function (
-    transformation,
-    model,
-  ) {
-    const viewModelNodes = await transformation.apply(model);
-    const data = viewModelNodes.map((node) => this._getObjectDescriptor(node));
-    console.log("set data to", data);
-    this._graphVizWidget.setData(data[0]);
-  };
-
   // PUBLIC METHODS
   GraphVizControl.prototype.destroy = function () {
-    if (this._territoryId) {
-      this._client.removeUI(this._territoryId);
-    }
+    this._transformObs.disconnect();
 
     this._detachClientEventListeners();
     this._removeToolbarItems();
@@ -434,6 +360,62 @@ define([
           this.apply(child)
         ))).flat(),
       }];
+    }
+  }
+
+  class NodePathResolver {
+    constructor(core, nodeDict) {
+      this._core = core;
+      this._dict = nodeDict;
+    }
+
+    resolve(nodePath) {
+      const node = this._dict[nodePath];
+      if (node) {
+        return this._core.getAttribute(node, "name");
+      }
+    }
+
+    resolveType(node) {
+      if (node.pointers && node.pointers.base) {
+        node.typeName = this.resolve(node.pointers.base);
+      }
+      if (node.children) {
+        node.children = node.children.map((child) => this.resolveType(child));
+      }
+      return node;
+    }
+
+    isTypeOf(node, typeName) {
+      const basePath = node.pointers.base;
+      let nodeIter = this._dict[basePath];
+      while (nodeIter) {
+        if (this._core.getAttribute(nodeIter, "name") === typeName) {
+          return true;
+        }
+        nodeIter = this._core.getBase(nodeIter);
+      }
+
+      return false;
+    }
+  }
+
+  class InteractionHandler {
+    constructor(actions) {
+      this.actions = actions;
+    }
+
+    async trigger() {
+      console.log("running interaction handler!");
+      const initialData = {};
+      await Promise.all(this.actions.map((act) => act.run(initialData)));
+    }
+
+    static from(nodeJson, libraryMeta) {
+      // TODO: we should probably change the model to use references instead of connections...
+      // TODO: check if they are actions
+      const actions = Actions.parse(nodeJson);
+      return new InteractionHandler(actions);
     }
   }
 
