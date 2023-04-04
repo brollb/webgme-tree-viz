@@ -119,7 +119,25 @@ define([
     }
   }
 
-  class SetPointer extends Action {} // TODO
+  class SetPointer extends Action {
+    constructor(nodeJson, parent) {
+      super();
+      this.nodeJson = nodeJson;
+      this.nodePath = resolvePointerTarget(nodeJson.pointers.node, parent);
+      this.pointer = resolvePointerTarget(
+        nodeJson.pointers.pointer,
+        parent,
+      );
+      this.target = resolvePointerTarget(nodeJson.pointers.target, parent);
+    }
+
+    async run(data) {
+      const nodePath = this.nodePath.resolve(data);
+      const pointer = this.pointer.resolve(data);
+      const target = this.target.resolve(data);
+      WebGMEGlobal.Client.setPointer(nodePath, pointer, target);
+    }
+  }
 
   class SetAttribute extends Action {
     constructor(nodeJson, parent) {
