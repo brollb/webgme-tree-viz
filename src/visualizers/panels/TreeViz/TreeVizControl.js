@@ -36,7 +36,7 @@ define([
     this._client = options.client;
 
     //initialize core collections and variables
-    this._graphVizWidget = options.widget;
+    this._treeVizWidget = options.widget;
     this._transformObs = new TransformationObserver(
       this._client,
       (core) => new DefaultTransformation(core),
@@ -52,7 +52,7 @@ define([
           this._getObjectDescriptor(node, libraryMeta)
         );
         console.log("set data to", data);
-        this._graphVizWidget.setData(data[0]);
+        this._treeVizWidget.setData(data[0]);
       },
     );
     this._currentNodeId = null;
@@ -68,34 +68,34 @@ define([
   TreeVizControl.prototype._initWidgetEventHandlers = function () {
     var self = this;
 
-    this._graphVizWidget.onBackgroundDblClick = function () {
+    this._treeVizWidget.onBackgroundDblClick = function () {
       if (self._currentNodeParentId) {
         WebGMEGlobal.State.registerActiveObject(self._currentNodeParentId);
       }
     };
 
-    this._graphVizWidget.onNodeDblClick = function (id) {
+    this._treeVizWidget.onNodeDblClick = function (id) {
       WebGMEGlobal.State.registerActiveObject(id);
     };
 
-    this._graphVizWidget.onExtendMenuItems = (nodeId, menuItems) => {
+    this._treeVizWidget.onExtendMenuItems = (nodeId, menuItems) => {
       return this.onExtendMenuItems(nodeId, menuItems);
     };
 
-    this._graphVizWidget.deleteNode = (nodeId) => {
+    this._treeVizWidget.deleteNode = (nodeId) => {
       this._client.deleteNode(nodeId);
     };
 
-    this._graphVizWidget.setName = (nodeId, name) => {
+    this._treeVizWidget.setName = (nodeId, name) => {
       this._client.setAttribute(nodeId, "name", name);
     };
 
-    this._graphVizWidget.onNodeOpen = function (id) {
+    this._treeVizWidget.onNodeOpen = function (id) {
       //self._selfPatterns[id] = {children: 1};
       //self._client.updateTerritory(self._territoryId, self._selfPatterns);
     };
 
-    this._graphVizWidget.onNodeClose = function (id) {
+    this._treeVizWidget.onNodeClose = function (id) {
       // TODO: optimize the territory that it is listening to?
     };
   };
@@ -116,7 +116,7 @@ define([
 
       const node = this._client.getNode(nodeId);
       const title = node.getAttribute("name") || "";
-      this._graphVizWidget.setTitle(title.toUpperCase());
+      this._treeVizWidget.setTitle(title.toUpperCase());
       this._currentNodeParentId = node.getParentId();
     }
   };

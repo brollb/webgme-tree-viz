@@ -93,7 +93,7 @@ define([
     //apply parent's onReadOnlyChanged
     PanelBaseWithHeader.prototype.onReadOnlyChanged.call(this, isReadOnly);
 
-    //this._graphVizWidget.setReadOnly(isReadOnly);
+    //this._treeVizWidget.setReadOnly(isReadOnly);
   };
 
   TreeVizPanel.prototype.onResize = function (width, height) {
