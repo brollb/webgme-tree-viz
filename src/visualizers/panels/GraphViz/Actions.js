@@ -91,6 +91,8 @@ define([
     async run(data) {
       // TODO: allow options to be dynamic?
       const answer = await Dialog.select(this.message, this.options);
+      if (!answer) return; // should this be configurable?
+
       if (this.answerId) {
         data[this.answerId] = answer.id;
       }

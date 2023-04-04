@@ -27,12 +27,12 @@ define(["./micromodal.min"], function (mm) {
       return options[0];
     }
 
-    let answer;
     const optsStr = options.map((opt, i) => `${i + 1}. ${opt.name}`).join("\n");
     const msg = `${message}\n\nOptions:\n${optsStr}`;
     const answerOpts = options.map((_, i) => i + 1);
 
-    while (!answerOpts.includes(answer)) {
+    let answer;
+    while (!answerOpts.includes(answer) || answer === null) {
       answer = +window.prompt(msg);
     }
     return options[answer - 1];
