@@ -39,13 +39,12 @@ define([
     this._treeVizWidget = options.widget;
     this._transformObs = new TransformationObserver(
       this._client,
-      (core) => new DefaultTransformation(core),
+      (core, rootNode) => new DefaultTransformation(core, rootNode),
       async (viewModel) => {
         //const isNodeStillActive = (nodeId) => nodeId === this._currentNodeId;
         // resolve the metamodel nodes to their names
         const { core, rootNode } = await this.getCoreInstance();
-        const metanodes = core.getLibraryMetaNodes(rootNode, ENGINE_NAME);
-        const libraryMeta = new NodePathResolver(core, metanodes);
+        const libraryMeta = getLibraryMeta(core, rootNode);
         viewModel = viewModel.map((node) => libraryMeta.resolveType(node));
 
         const data = viewModel.map((node) =>
@@ -346,20 +345,48 @@ define([
   };
 
   class DefaultTransformation {
-    constructor(core) {
+    constructor(core, rootNode) {
       this.core = core;
+      this.root = rootNode;
+      this.libraryMeta = getLibraryMeta(this.core, this.root);
     }
 
-    async apply(node) {
-      const children = await this.core.loadChildren(node);
-      return [{
-        attributes: {
-          name: this.core.getAttribute(node, "name"),
-        },
-        children: (await Promise.all(children.map((child) =>
-          this.apply(child)
-        ))).flat(),
-      }];
+    _createNode(type, name) {
+      const node = {
+        pointers: { base: this.libraryMeta.getTypePath(type) },
+        attributes: {},
+        children: [],
+      };
+      if (name) {
+        node.attributes.name = name;
+      }
+      return node;
+    }
+
+    async apply(gmeNode) {
+      const name = this.core.getAttribute(gmeNode, "name");
+      const nodePath = this.core.getPath(gmeNode);
+      const node = this._createNode("Node", name);
+
+      const childNodes = await this.core.loadChildren(gmeNode);
+      const children = await Promise.all(
+        childNodes.map((child) => this.apply(child)),
+      );
+
+      node.children = children.flat();
+
+      // Add double click to open
+      const dblClick = this._createNode("DoubleClick");
+      const setActive = this._createNode("SetActiveNode");
+      const targetNode = this._createNode("Constant");
+      targetNode.attributes.value = nodePath;
+      targetNode.id = `@id:setActiveTarget_${nodePath}`;
+      setActive.pointers.node = targetNode.id;
+
+      dblClick.children.push(setActive, targetNode);
+      node.children.push(dblClick);
+
+      return [node];
     }
   }
 
@@ -367,6 +394,14 @@ define([
     constructor(core, nodeDict) {
       this._core = core;
       this._dict = nodeDict;
+      this._nodes = Object.values(this._dict);
+    }
+
+    getTypePath(typeName) {
+      const node = this._nodes.find((node) =>
+        this._core.getAttribute(node, "name") === typeName
+      );
+      return node && this._core.getPath(node);
     }
 
     resolve(nodePath) {
@@ -417,6 +452,11 @@ define([
       const actions = Actions.parse(nodeJson);
       return new InteractionHandler(actions);
     }
+  }
+
+  function getLibraryMeta(core, rootNode) {
+    const metanodes = core.getLibraryMetaNodes(rootNode, ENGINE_NAME);
+    return new NodePathResolver(core, metanodes);
   }
 
   return TreeVizControl;
