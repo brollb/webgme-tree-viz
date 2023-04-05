@@ -2,6 +2,7 @@
   "name": "webgme-tree-viz",
   "scripts": {
     "start": "node app.js",
+    "build": "",
     "test": "node ./node_modules/mocha/bin/mocha --recursive test",
     "apply": "node ./node_modules/webgme-engine/src/bin/apply.js",
     "diff": "node ./node_modules/webgme-engine/src/bin/diff.js",
