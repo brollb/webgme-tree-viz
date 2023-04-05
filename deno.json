@@ -1,0 +1,9 @@
+{
+  "fmt": {
+    "files": {
+      "exclude": [
+        "src/common/dialog/micromodal.min.js"
+      ]
+    }
+  }
+}
