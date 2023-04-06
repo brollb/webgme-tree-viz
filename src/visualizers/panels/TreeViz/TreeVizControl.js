@@ -22,7 +22,7 @@ define([
 
   console.log({ GMETransformations });
   const { TransformationObserver } = GMETransformations;
-  const SET_NAME = "visualizers";
+  const SET_NAME = "validVisualizers";
   const ENGINE_NAME = "TreeViz";
 
   var TreeVizControl;
@@ -100,8 +100,6 @@ define([
   };
 
   TreeVizControl.prototype.selectedObjectChanged = async function (nodeId) {
-    var self = this;
-
     // TODO: get the path of the transformation node
     this._currentNodeId = nodeId;
     this._currentNodeParentId = undefined;
