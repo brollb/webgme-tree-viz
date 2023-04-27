@@ -23,6 +23,6 @@
     "webgme": "^2.23.0"
   },
   "dependencies": {
-    "webgme-transformations": "^0.2.0"
+    "webgme-transformations": "^0.3"
   }
 }
